@@ -1,31 +1,62 @@
-import { useState } from 'react';
-import { VoltageAfrica_backend } from 'declarations/VoltageAfrica_backend';
+import React, { useState, useEffect } from 'react';
+import { EnergyTrading } from '../../../declarations/EnergyTrading';
 
-function App() {
-  const [greeting, setGreeting] = useState('');
+const App = () => {
+    const [tokens, setTokens] = useState([]);
+    const [newToken, setNewToken] = useState({ energyAmount: 0, price: 0 });
 
-  function handleSubmit(event) {
-    event.preventDefault();
-    const name = event.target.elements.name.value;
-    VoltageAfrica_backend.greet(name).then((greeting) => {
-      setGreeting(greeting);
-    });
-    return false;
-  }
+    useEffect(() => {
+        async function loadTokens() {
+            const availableTokens = await EnergyTrading.getAvailableTokens();
+            setTokens(availableTokens);
+        }
+        loadTokens();
+    }, []);
 
-  return (
-    <main>
-      <img src="/logo2.svg" alt="DFINITY logo" />
-      <br />
-      <br />
-      <form action="#" onSubmit={handleSubmit}>
-        <label htmlFor="name">Enter your name: &nbsp;</label>
-        <input id="name" alt="Name" type="text" />
-        <button type="submit">Click Me!</button>
-      </form>
-      <section id="greeting">{greeting}</section>
-    </main>
-  );
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        await EnergyTrading.createToken(newToken.energyAmount, newToken.price);
+        setTokens([...tokens, newToken]);
+        setNewToken({ energyAmount: 0, price: 0 });
+    };
+
+    const buyToken = async (tokenId) => {
+        const buyer = "your-principal-id";
+        await EnergyTrading.transferToken(tokenId, buyer);
+        alert('Token purchased successfully');
+    };
+
+    return (
+        <div>
+            <h1>Energy Trading Platform</h1>
+            <form onSubmit={handleSubmit}>
+                <input 
+                    placeholder="Energy Amount" 
+                    value={newToken.energyAmount}
+                    onChange={(e) => setNewToken({...newToken, energyAmount: e.target.value})} 
+                />
+                <input 
+                    placeholder="Price" 
+                    value={newToken.price}
+                    onChange={(e) => setNewToken({...newToken, price: e.target.value})} 
+                />
+                <button type="submit">Create Energy Token</button>
+            </form>
+
+            <h2>Available Energy Tokens</h2>
+            <ul>
+                {tokens.map((token, index) => (
+                    <li key={index}>
+                        {token.energyAmount} kWh at {token.price} ICP
+                        <button onClick={() => buyToken(token.id)}>Buy</button>
+                    </li>
+                ))}
+            </ul>
+        </div>
+    );
 }
 
 export default App;
+07:46
+
+
